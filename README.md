@@ -16,49 +16,73 @@ To write a PYTHON program for socket for HTTP for web page upload and download
 6.Stop the program
 <BR>
 ## Program 
+
 ```
-htt.py
+server.py
 
 import socket
-def send_request(host, port, request):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((host, port))
-        s.sendall(request.encode())
-        response = s.recv(4096).decode()
-    return response
 
-def upload_file(host, port, filename):
-    with open(filename, 'rb') as file:
-        file_data = file.read()
-        content_length = len(file_data)
-        request = f"POST /upload HTTP/1.1\r\nHost: {host}\r\nContent-Length: {content_length}\r\n\r\n"
-        request += file_data.decode()
-        response = send_request(host, port, request)
-    return response
+s = socket.socket()
+s.bind(("localhost", 8081))
+s.listen(1)
 
-def download_file(host, port, filename):
-    request = f"GET /{filename} HTTP/1.1\r\nHost: {host}\r\n\r\n"
-    response = send_request(host, port, request)
-    # Assuming the response contains the file content after the headers
-    file_content = response.split('\r\n\r\n', 1)[1]
-    with open(filename, 'wb') as file:
-        file.write(file_content.encode())
+print("Server running...")
 
-if __name__ == "__main__":
-    host = 'example.com'
-    port = 80
+while True:
+    c, addr = s.accept()
 
-    # Upload file
-    upload_response = upload_file(host, port, 'example.txt')
-    print("Upload response:", upload_response)
+    request = c.recv(1024).decode()
+    print("Request received")
 
-    # Download file
-    download_file(host, port, 'example.txt')
-    print("File downloaded successfully.")
+    if "GET" in request:
+        f = open("index.html", "r")
+        data = f.read()
+        f.close()
+
+        response = "HTTP/1.1 200 OK\n\n" + data
+        c.send(response.encode())
+
+    elif "POST" in request:
+        data = request.split("\n\n")[1]
+
+        f = open("upload.txt", "w")
+        f.write(data)
+        f.close()
+
+        c.send("HTTP/1.1 200 OK\n\nFile Uploaded".encode())
+
+    c.close()
+
+client.py
+
+import socket
+
+s = socket.socket()
+s.connect(("localhost", 8081))
+
+ch = input("1.Download 2.Upload : ")
+
+if ch == "1":
+    req = "GET / HTTP/1.1\nHost: localhost\n\n"
+    s.send(req.encode())
+
+    data = s.recv(4096)
+    print(data.decode())
+
+else:
+    msg = input("Enter data to upload: ")
+
+    req = "POST / HTTP/1.1\nHost: localhost\n\n" + msg
+    s.send(req.encode())
+
+    data = s.recv(1024)
+    print(data.decode())
+
+s.close()
 ```
 
 ## OUTPUT
-<img width="1918" height="1198" alt="http 5" src="https://github.com/user-attachments/assets/9de19392-7b40-4b33-b43f-8b4b4c7d81a2" />
+<img width="1914" height="994" alt="image" src="https://github.com/user-attachments/assets/aa425919-4eff-470b-8085-0e8c7b141c9b" />
 
 ## Result
 Thus the socket for HTTP for web page upload and download created and Executed
